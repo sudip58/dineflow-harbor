@@ -9,11 +9,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CheckedState } from './ui/checkbox';
 
 export interface Reservation {
   id: string;
   name: string;
-  date: Date;
+  date: Date | string;
   time: string;
   guests: number;
   table: number;
@@ -21,6 +22,8 @@ export interface Reservation {
   email: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
   notes?: string;
+  restaurant_id?: string;
+  created_at?: string;
 }
 
 interface ReservationCardProps {
@@ -64,6 +67,11 @@ const ReservationCard = ({ reservation, onStatusChange }: ReservationCardProps) 
     }
   };
   
+  // Ensure date is a Date object for formatting
+  const reservationDate = typeof reservation.date === 'string' 
+    ? new Date(reservation.date) 
+    : reservation.date;
+  
   return (
     <div 
       className={cn(
@@ -78,7 +86,7 @@ const ReservationCard = ({ reservation, onStatusChange }: ReservationCardProps) 
             <div className="flex items-center space-x-1 mt-1">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {format(reservation.date, 'MMM dd, yyyy')}
+                {format(reservationDate, 'MMM dd, yyyy')}
               </p>
               <span className="text-muted-foreground">•</span>
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />

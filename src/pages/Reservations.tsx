@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
-import { CalendarIcon, PlusCircle, ChevronLeft, ChevronRight, Users, Filter } from 'lucide-react';
+import { CalendarIcon, PlusCircle, ChevronLeft, ChevronRight, Users, Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -9,112 +9,71 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 import ReservationCard, { Reservation } from '@/components/ReservationCard';
+import ReservationForm from '@/components/ReservationForm';
 import Navbar from '@/components/Navbar';
+import { subscribeToReservations, updateReservationStatus } from '@/services/reservationService';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
-// Sample data for reservations
-const sampleReservations: Reservation[] = [
-  {
-    id: '1',
-    name: 'Alex Johnson',
-    date: new Date(),
-    time: '12:30 PM',
-    guests: 4,
-    table: 3,
-    phone: '(555) 123-4567',
-    email: 'alex@example.com',
-    status: 'confirmed',
-  },
-  {
-    id: '2',
-    name: 'Emily Carter',
-    date: new Date(),
-    time: '1:00 PM',
-    guests: 2,
-    table: 1,
-    phone: '(555) 987-6543',
-    email: 'emily@example.com',
-    status: 'pending',
-    notes: 'Anniversary celebration'
-  },
-  {
-    id: '3',
-    name: 'David Smith',
-    date: new Date(),
-    time: '7:30 PM',
-    guests: 6,
-    table: 5,
-    phone: '(555) 456-7890',
-    email: 'david@example.com',
-    status: 'confirmed',
-    notes: 'Prefers window seating'
-  },
-  {
-    id: '4',
-    name: 'Sarah Williams',
-    date: addDays(new Date(), 1),
-    time: '6:00 PM',
-    guests: 5,
-    table: 6,
-    phone: '(555) 234-5678',
-    email: 'sarah@example.com',
-    status: 'confirmed',
-  },
-  {
-    id: '5',
-    name: 'Michael Brown',
-    date: addDays(new Date(), 1),
-    time: '8:00 PM',
-    guests: 2,
-    table: 2,
-    phone: '(555) 876-5432',
-    email: 'michael@example.com',
-    status: 'confirmed',
-    notes: 'Birthday celebration'
-  },
-  {
-    id: '6',
-    name: 'Jessica Lee',
-    date: addDays(new Date(), 2),
-    time: '7:00 PM',
-    guests: 3,
-    table: 4,
-    phone: '(555) 345-6789',
-    email: 'jessica@example.com',
-    status: 'pending',
-  }
-];
-
 const Reservations = () => {
-  const [reservations, setReservations] = useState<Reservation[]>(sampleReservations);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
   const [loaded, setLoaded] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     setLoaded(true);
+    
+    // Subscribe to real-time updates
+    const unsubscribe = subscribeToReservations((data) => {
+      setReservations(data);
+      setIsLoading(false);
+    });
+    
+    // Cleanup subscription on component unmount
+    return () => {
+      unsubscribe();
+    };
   }, []);
   
-  const handleReservationStatusChange = (id: string, status: Reservation['status']) => {
-    setReservations(prev => 
-      prev.map(reservation => 
-        reservation.id === id ? { ...reservation, status } : reservation
-      )
-    );
+  const handleReservationStatusChange = async (id: string, status: Reservation['status']) => {
+    const success = await updateReservationStatus(id, status);
+    
+    if (success) {
+      toast({
+        title: 'Status updated',
+        description: `Reservation status changed to ${status}`,
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to update reservation status',
+        variant: 'destructive',
+      });
+    }
   };
   
   const filteredReservations = reservations.filter(res => {
     // Filter by date
-    const sameDay = isSameDay(res.date, selectedDate);
+    const resDate = typeof res.date === 'string' ? new Date(res.date) : res.date;
+    const sameDay = isSameDay(resDate, selectedDate);
+    
+    // Filter by status
+    const matchesStatus = statusFilter === 'all' || res.status === statusFilter;
     
     // Filter by search query
     const matchesSearch = res.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           res.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           res.phone.includes(searchQuery);
     
-    return sameDay && matchesSearch;
+    return sameDay && matchesStatus && matchesSearch;
   });
   
   const nextWeek = () => {
@@ -128,6 +87,15 @@ const Reservations = () => {
   // Generate week days
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   
+  // Count reservations by status
+  const reservationCounts = {
+    total: filteredReservations.length,
+    confirmed: filteredReservations.filter(r => r.status === 'confirmed').length,
+    pending: filteredReservations.filter(r => r.status === 'pending').length,
+    cancelled: filteredReservations.filter(r => r.status === 'cancelled').length,
+    completed: filteredReservations.filter(r => r.status === 'completed').length,
+  };
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -139,7 +107,7 @@ const Reservations = () => {
             <p className="text-muted-foreground mt-1">Manage your upcoming bookings</p>
           </div>
           
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsFormOpen(true)}>
             <PlusCircle className="h-4 w-4" />
             <span>New Reservation</span>
           </Button>
@@ -194,7 +162,10 @@ const Reservations = () => {
             <CardContent>
               <div className="grid grid-cols-7 gap-2">
                 {weekDays.map((day, i) => {
-                  const dayReservations = reservations.filter(r => isSameDay(r.date, day));
+                  const dayReservations = reservations.filter(r => {
+                    const rDate = typeof r.date === 'string' ? new Date(r.date) : r.date;
+                    return isSameDay(rDate, day);
+                  });
                   const isToday = isSameDay(day, new Date());
                   const isSelected = isSameDay(day, selectedDate);
                   
@@ -242,12 +213,43 @@ const Reservations = () => {
           style={{ transitionDelay: '200ms' }}
         >
           <div className="w-full sm:w-auto">
-            <Tabs defaultValue="all" className="w-full sm:w-[400px]">
-              <TabsList className="grid grid-cols-4 w-full">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <Tabs 
+              defaultValue="all" 
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              className="w-full sm:w-[400px]"
+            >
+              <TabsList className="grid grid-cols-5 w-full">
+                <TabsTrigger value="all">
+                  All
+                  <span className="ml-1 text-xs bg-secondary rounded-full px-1.5 py-0.5">
+                    {reservationCounts.total}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="confirmed">
+                  Confirmed
+                  <span className="ml-1 text-xs bg-green-100 text-green-800 rounded-full px-1.5 py-0.5">
+                    {reservationCounts.confirmed}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="pending">
+                  Pending
+                  <span className="ml-1 text-xs bg-yellow-100 text-yellow-800 rounded-full px-1.5 py-0.5">
+                    {reservationCounts.pending}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="completed">
+                  Completed
+                  <span className="ml-1 text-xs bg-blue-100 text-blue-800 rounded-full px-1.5 py-0.5">
+                    {reservationCounts.completed}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="cancelled">
+                  Cancelled
+                  <span className="ml-1 text-xs bg-red-100 text-red-800 rounded-full px-1.5 py-0.5">
+                    {reservationCounts.cancelled}
+                  </span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -275,6 +277,17 @@ const Reservations = () => {
                   />
                 </svg>
               </div>
+              
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             
             <DropdownMenu>
@@ -329,38 +342,65 @@ const Reservations = () => {
         </div>
         
         {/* Reservations List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredReservations.length > 0 ? (
-            filteredReservations.map((reservation, index) => (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredReservations.length > 0 ? (
+              filteredReservations.map((reservation, index) => (
+                <div 
+                  key={reservation.id}
+                  className={cn(
+                    "transition-all duration-500",
+                    loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  )}
+                  style={{ transitionDelay: `${400 + index * 100}ms` }}
+                >
+                  <ReservationCard 
+                    reservation={reservation}
+                    onStatusChange={handleReservationStatusChange}
+                  />
+                </div>
+              ))
+            ) : (
               <div 
-                key={reservation.id}
-                className={cn(
-                  "transition-all duration-500",
-                  loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                )}
-                style={{ transitionDelay: `${400 + index * 100}ms` }}
+                className="col-span-full flex flex-col items-center justify-center py-12 text-center"
+                style={{ transitionDelay: '400ms' }}
               >
-                <ReservationCard 
-                  reservation={reservation}
-                  onStatusChange={handleReservationStatusChange}
-                />
+                <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-1">No reservations found</h3>
+                <p className="text-muted-foreground max-w-md">
+                  There are no reservations for the selected date or your search criteria.
+                  Try selecting a different date or adjusting your filters.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsFormOpen(true)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Reservation
+                </Button>
               </div>
-            ))
-          ) : (
-            <div 
-              className="col-span-full flex flex-col items-center justify-center py-12 text-center"
-              style={{ transitionDelay: '400ms' }}
-            >
-              <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-1">No reservations found</h3>
-              <p className="text-muted-foreground max-w-md">
-                There are no reservations for the selected date or your search criteria.
-                Try selecting a different date or adjusting your filters.
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </main>
+      
+      {/* New Reservation Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>New Reservation</DialogTitle>
+          </DialogHeader>
+          <ReservationForm 
+            onSuccess={() => setIsFormOpen(false)}
+            onCancel={() => setIsFormOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
