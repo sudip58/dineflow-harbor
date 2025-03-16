@@ -10,7 +10,7 @@ import {
   CheckCircle, Clock, XCircle, ShoppingCart, ChevronRight, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox, CheckedState } from '@/components/ui/checkbox';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
@@ -69,7 +69,7 @@ export function DataTable({ data, onStatusChange }: DataTableProps) {
         <Checkbox
           checked={
             table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
+            (table.getIsSomePageRowsSelected() ? "indeterminate" : false)
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
