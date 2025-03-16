@@ -1,120 +1,69 @@
-# Restaurant Management System
+# Welcome to your Lovable project
 
-## Project Overview
+## Project info
 
-The **Restaurant Management System** is a modern web application built with React and Supabase. It helps restaurant owners efficiently manage orders, menus, reservations, and customer interactions.
+**URL**: https://lovable.dev/projects/b69cd25c-d123-4fb6-ae68-e3089d07be07
 
-## Technologies Used
+## How can I edit this code?
 
-- **Vite** - Fast and optimized development environment
-- **React** - Frontend library for UI development
-- **TypeScript** - Strongly typed JavaScript
-- **Shadcn UI** - Modern UI components
-- **Tailwind CSS** - Utility-first styling framework
-- **Supabase** - Backend as a service with authentication and database support
+There are several ways of editing your application.
 
-## Getting Started
+**Use Lovable**
 
-To set up the project locally, follow these steps:
+Simply visit the [Lovable Project](https://lovable.dev/projects/b69cd25c-d123-4fb6-ae68-e3089d07be07) and start prompting.
 
-### Prerequisites
+Changes made via Lovable will be committed automatically to this repo.
 
-Ensure you have **Node.js** and **npm** installed. You can install Node.js via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+**Use your preferred IDE**
 
-### Installation
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-1. **Clone the repository:**
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-   ```sh
-   git clone <YOUR_GIT_URL>
-   ```
+Follow these steps:
 
-2. **Navigate to the project directory:**
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-   ```sh
-   cd restaurant-management-system
-   ```
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-3. **Install dependencies:**
+# Step 3: Install the necessary dependencies.
+npm i
 
-   ```sh
-   npm install
-   ```
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
 
-4. **Set up environment variables:**
+**Edit a file directly in GitHub**
 
-   Create a `.env` file in the root directory and add your Supabase credentials:
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-   ```sh
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+**Use GitHub Codespaces**
 
-5. **Start the development server:**
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-   ```sh
-   npm run dev
-   ```
+## What technologies are used for this project?
 
-   Your app will be running at `http://localhost:5173`
+This project is built with .
 
-## Editing the Code
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-### Using Your Preferred IDE
+## How can I deploy this project?
 
-You can open the project in your favorite code editor (VS Code, WebStorm, etc.), make changes, and push them to the repository.
+Simply open [Lovable](https://lovable.dev/projects/b69cd25c-d123-4fb6-ae68-e3089d07be07) and click on Share -> Publish.
 
-### Using GitHub Codespaces
+## I want to use a custom domain - is that possible?
 
-1. Navigate to your repository on GitHub.
-2. Click the **Code** button and go to the **Codespaces** tab.
-3. Click **Create codespace** to launch a cloud-based development environment.
-
-## Deployment
-
-### Deploying to Vercel
-
-1. Install Vercel CLI:
-
-   ```sh
-   npm install -g vercel
-   ```
-
-2. Run the deployment command:
-
-   ```sh
-   vercel
-   ```
-
-Follow the CLI instructions to complete the setup.
-
-### Deploying to Netlify
-
-1. Install Netlify CLI:
-
-   ```sh
-   npm install -g netlify-cli
-   ```
-
-2. Deploy the project:
-
-   ```sh
-   netlify deploy
-   ```
-
-## Custom Domain Setup
-
-To deploy under your own domain, configure your domain settings in your Netlify or Vercel dashboard.
-
-## Contributing
-
-Feel free to fork this repository, create a new branch, and submit a pull request for any improvements.
-
-## License
-
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-
-Enjoy building with React and Supabase! 🚀
-
+We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
